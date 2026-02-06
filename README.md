@@ -47,17 +47,149 @@ v2v/
 
 ## 安装和依赖
 
+### 使用 uv 管理工具（推荐）
+
+本项目使用 [uv](https://github.com/astral-sh/uv) 作为Python包管理工具，它是一个快速的Python包安装程序和解析器，可以替代pip和pip-tools。
+
+#### 安装 uv
+
+**Windows:**
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**Linux/macOS:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+#### 初始化项目
+
+首次使用时，项目已经初始化了uv配置，包含以下内容：
+
+- `pyproject.toml` - 项目配置文件
+- `.venv/` - 虚拟环境目录（首次运行 `uv sync` 后创建）
+
+#### 创建和激活虚拟环境
+
+1. **同步依赖并创建虚拟环境**：
+```bash
+uv sync
+```
+
+这将创建虚拟环境并安装所有必要的依赖。
+
+2. **激活虚拟环境**：
+
+**Windows (PowerShell):**
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+**Windows (CMD):**
+```cmd
+.venv\Scripts\activate.bat
+```
+
+**Linux/macOS:**
+```bash
+source .venv/bin/activate
+```
+
+#### 安装开发依赖
+
+如果需要运行测试或进行代码检查，安装开发依赖：
+
+```bash
+uv sync --extra dev
+```
+
+#### 运行项目
+
+在虚拟环境中运行项目：
+
+```bash
+uv run python main.py
+```
+
+或者先激活虚拟环境，然后直接运行：
+
+```bash
+python main.py
+```
+
+#### 运行测试
+
+```bash
+uv run pytest
+```
+
+或者：
+
+```bash
+pytest
+```
+
+#### 代码检查
+
+```bash
+uv run flake8
+```
+
+或者：
+
+```bash
+flake8
+```
+
+#### 添加新依赖
+
+添加生产环境依赖：
+```bash
+uv add package_name
+```
+
+添加开发环境依赖：
+```bash
+uv add --dev package_name
+```
+
+#### 更新依赖
+
+```bash
+uv lock --upgrade
+uv sync
+```
+
+### 传统安装方法
+
+如果不想使用uv，可以使用传统的pip安装方式：
+
+1. 创建虚拟环境：
+```bash
+python -m venv .venv
+```
+
+2. 激活虚拟环境（参考上面的激活命令）
+
+3. 安装依赖：
+```bash
+pip install pyyaml>=6.0 pyvmomi>=8.0.0 pycryptodome>=3.15.0
+```
+
 ### 依赖项
 
-- Python 3.x
-- xxxcloud.iaas (xxxcloud云平台API)
-- 其他必要的Python库
+- Python >= 3.11
+- pyyaml >= 6.0 - YAML文件解析
+- pyvmomi >= 8.0.0 - VMware vSphere API
+- pycryptodome >= 3.15.0 - 加密库
+- pytest >= 7.0.0 - 测试框架（开发依赖）
+- flake8 >= 5.0.0 - 代码检查工具（开发依赖）
 
-### 安装方法
+### 配置文件
 
-1. 克隆代码库
-2. 安装依赖项
-3. 配置相关参数
+1. **配置文件路径**：`/pitrix/conf/v2v_worker.yaml`
+2. **如果配置文件不存在**，系统将使用默认配置值
 
 ## 使用方法
 
@@ -117,16 +249,35 @@ logger.error("Error message")
 4. **存储空间**：确保有足够的存储空间用于存储镜像文件
 5. **源虚拟机状态**：迁移前确保源虚拟机处于关机状态
 
-## 版本历史
 
-- 初始版本：基本功能实现
-- 优化版本：移除多余权限校验代码，优化日志系统，简化迁移流程
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request 来改进这个项目。
 
 ## 许可证
 
 [MIT License](LICENSE)
 
+## 提交 Issue
+
+如果您在使用过程中遇到问题，或有新的功能建议，欢迎在 GitHub 上提交 Issue：
+
+1. 访问项目的 GitHub 仓库页面
+2. 点击 "Issues" 选项卡
+3. 点击 "New issue" 按钮
+4. 选择适当的 issue 模板（如果有）
+5. 填写 issue 标题和详细描述
+6. 点击 "Submit new issue" 按钮提交
+
+### Issue 提交建议
+
+- **问题报告**：
+  - 描述您遇到的具体问题
+  - 提供重现步骤
+  - 说明您期望的行为
+  - 附上相关的错误信息或日志
+  - 注明您的环境信息（Python 版本、操作系统等）
+
+- **功能请求**：
+  - 描述您希望添加的功能
+  - 说明为什么这个功能是有用的
+  - 如有可能，提供功能实现的建议
+
+我们会定期查看并处理提交的 Issue，感谢您对项目的贡献！
