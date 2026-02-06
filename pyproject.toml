@@ -3,7 +3,7 @@ name = "v2v"
 version = "0.1.0"
 description = "VMware to Cloud migration tool"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "==3.11"
 dependencies = [
     "pyyaml>=6.0",
     "pyvmomi>=8.0.0",

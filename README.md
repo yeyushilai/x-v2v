@@ -179,7 +179,7 @@ pip install pyyaml>=6.0 pyvmomi>=8.0.0 pycryptodome>=3.15.0
 
 ### 依赖项
 
-- Python >= 3.11
+- Python == 3.11
 - pyyaml >= 6.0 - YAML文件解析
 - pyvmomi >= 8.0.0 - VMware vSphere API
 - pycryptodome >= 3.15.0 - 加密库
