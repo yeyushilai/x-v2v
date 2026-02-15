@@ -1,5 +1,5 @@
 [project]
-name = "new_v2v"
+name = "x-v2v"
 version = "1.0.0"
 description = "Virtual machine migration tool"
 requires-python = ">=3.9"
