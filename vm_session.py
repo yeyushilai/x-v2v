@@ -210,8 +210,8 @@ class VMSession(VMSessionBase):
         """源主机迁移"""
         try:
             self.migration().migrate()
-        except Exception:
-            logger.error(f"vm migrate failed, session id: {self.session_id}")
+        except Exception as e:
+            logger.error(f"vm migrate failed, session id: {self.session_id}, err: {e}")
 
     def update_to_mem(self, data):
         """更新虚拟机任务信息到内存"""
