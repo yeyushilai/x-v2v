@@ -34,6 +34,7 @@ x-v2v/
 ├── config.yaml        # 配置文件
 ├── main.py            # 主程序入口
 ├── vm_session.py      # 虚拟机会话管理
+├── migration.py       # 迁移核心逻辑
 ├── pyproject.toml     # 项目依赖配置
 ├── uv_manager.py      # UV 项目管理工具
 └── setup_uv.py        # UV 环境设置脚本
