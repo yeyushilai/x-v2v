@@ -24,18 +24,8 @@ from core.config import config
 from tools.convert_tool import ConvertTool
 from tools.time_tool import TimeTool
 from tools.file_tool import FileTool
-from tools.aes_tool import AESTool
 from clients.cmd_cli import CMDClient
 
-from constants.template import (
-    # 导出镜像
-    EXPORT_IMAGE_CMD_TEMPLATE,
-
-    # 处理镜像
-    DEAL_IMAGE_CONVERT_IMAGE_CMD_TEMPLATE,
-
-    # 创建虚拟机
-)
 
 from constants.enum import (
     RunningDetailMigrateStatus,
@@ -50,17 +40,18 @@ def copy_nfs_file(nfs_file_path, local_file_path, timeout=60):
     """从nfs拷贝文件到本地"""
     pass
 
+
 def map_nbd_device_context(img_path):
     """连接到nbd设备，本质上是将镜像文件映射为nbd网络块设备"""
     pass
 
 
 def mount_nbd_device_context(mnt_dir, dev_path, option="ro"):
-    """ 挂载设备 """
+    """挂载设备"""
     pass
 
-class BaseMigration(object):
 
+class BaseMigration(object):
     def __init__(self, vm_session):
         self.vm_session = vm_session
         self.ovf_path = ""
@@ -75,7 +66,6 @@ class BaseMigration(object):
         self.create_vm()
         self.cover_image()
         self.recorrect_and_optimize()
-
 
     def export_image(self):
         pass
@@ -142,7 +132,7 @@ class BaseMigration(object):
 
     def cover_image(self):
         """覆盖镜像"""
-        
+
         # 更新详细的迁移状态信息
 
         # 存储部署模式:Sanc
@@ -158,7 +148,7 @@ class BaseMigration(object):
 
         # Sanc 4.重启目标虚拟机
         self._restart_dst_vm()
-        
+
         # 存储部署模式:普通
         # 普通 1.使用mv，覆盖所有的硬盘数据（包括系统盘和数据盘）
         for disk_info in self.vm_session.dst_vm_disk:
@@ -190,7 +180,9 @@ class BaseMigration(object):
 
     def _gen_dst_vm_disk_info(self):
         """生成目标虚拟机磁盘信息"""
-        logger.info(f"generate dst vm disk info start, session id: {self.vm_session.session_id}")
+        logger.info(
+            f"generate dst vm disk info start, session id: {self.vm_session.session_id}"
+        )
 
         self.json_path = self.ovf_path.replace("ovf", "json")
         ovf_config = ConvertTool.xml_file_to_json_file(self.ovf_path, self.json_path)
@@ -209,14 +201,14 @@ class BaseMigration(object):
         disk_id_disk_label_mapper = dict()
         for item in Item:
             if "rasd:HostResource" in item.keys():
-                HostResource = item[
-                    "rasd:HostResource"]  # eg: "ovf:/disk/vmdisk1"
+                HostResource = item["rasd:HostResource"]  # eg: "ovf:/disk/vmdisk1"
                 resource = HostResource.split("/")[-1]  # eg: "vmdisk1"
                 ElementName = item["rasd:ElementName"]  # eg: "Hard disk 1"
                 disk_id_disk_label_mapper[resource] = ElementName
         logger.info(
             f"disk id and disk label mapper: {disk_id_disk_label_mapper}, "
-            f"session id: {self.vm_session.session_id}, src vm id: {self.vm_session.src_vm_id}")
+            f"session id: {self.vm_session.session_id}, src vm id: {self.vm_session.src_vm_id}"
+        )
 
         # file_ref和disk_attr的映射
         # example:
@@ -240,26 +232,26 @@ class BaseMigration(object):
             ovf_file_ref = DiskSectionInfo["@ovf:fileRef"]  # eg: "file1"
             ovf_disk_id = DiskSectionInfo["@ovf:diskId"]  # eg: "vmdisk1"
             ovf_capacity = DiskSectionInfo["@ovf:capacity"]  # eg: 100
-            ovf_unit = DiskSectionInfo[
-                "@ovf:capacityAllocationUnits"]  # byte * 2^30
+            ovf_unit = DiskSectionInfo["@ovf:capacityAllocationUnits"]  # byte * 2^30
             file_ref_disk_attr_map[ovf_file_ref] = dict(
-                ovf_disk_id=ovf_disk_id,
-                ovf_capacity=ovf_capacity,
-                ovf_unit=ovf_unit)
+                ovf_disk_id=ovf_disk_id, ovf_capacity=ovf_capacity, ovf_unit=ovf_unit
+            )
         # 若源虚拟机有多个硬盘
         elif isinstance(DiskSectionInfo, list):
             for section in DiskSectionInfo:
                 ovf_file_ref = section["@ovf:fileRef"]  # eg: "file1"
                 ovf_disk_id = section["@ovf:diskId"]  # eg: "vmdisk1"
                 ovf_capacity = section["@ovf:capacity"]  # eg: 100
-                ovf_unit = section[
-                    "@ovf:capacityAllocationUnits"]  # byte * 2^30
+                ovf_unit = section["@ovf:capacityAllocationUnits"]  # byte * 2^30
                 file_ref_disk_attr_map[ovf_file_ref] = dict(
                     ovf_disk_id=ovf_disk_id,
                     ovf_capacity=ovf_capacity,
-                    ovf_unit=ovf_unit)
-        logger.info(f"file ref and disk attr mapper: {file_ref_disk_attr_map}, session id: {self.vm_session.session_id}, "
-                    f"src vm id: {self.vm_session.src_vm_id}")
+                    ovf_unit=ovf_unit,
+                )
+        logger.info(
+            f"file ref and disk attr mapper: {file_ref_disk_attr_map}, session id: {self.vm_session.session_id}, "
+            f"src vm id: {self.vm_session.src_vm_id}"
+        )
 
         # ovf_href和ovf_id的映射
         # example
@@ -281,8 +273,10 @@ class BaseMigration(object):
                 ovf_id = file_data["@ovf:id"]  # eg: "file1"
                 ovf_href = file_data["@ovf:href"]  # eg: "xxxx-disk1.vmdk""
                 ovf_href_ovf_id_mapper[ovf_href] = ovf_id
-        logger.info(f"ovf href and ovf id mapper: {ovf_href_ovf_id_mapper}, "
-                    f"session id: {self.vm_session.session_id}, src vm id: {self.vm_session.src_vm_id}")
+        logger.info(
+            f"ovf href and ovf id mapper: {ovf_href_ovf_id_mapper}, "
+            f"session id: {self.vm_session.session_id}, src vm id: {self.vm_session.src_vm_id}"
+        )
 
         # vmdk文件名称和vmdk文件路径的映射
         # example:
@@ -303,10 +297,12 @@ class BaseMigration(object):
                 disk_label = disk_id_disk_label_mapper[ovf_disk_id]
 
                 disk_info["vmdk_name"] = decode_vmdk_name  # xxxx-disk1.vmdk
-                disk_info[
-                    "vmdk_path"] = decode_vmdk_path  # /xxxx/v2v_export/session-xxxx/xxxx/xxxx-disk1.vmdk
+                disk_info["vmdk_path"] = (
+                    decode_vmdk_path  # /xxxx/v2v_export/session-xxxx/xxxx/xxxx-disk1.vmdk
+                )
                 disk_info["vmdk_size"] = FileTool.get_file_size(
-                    decode_vmdk_path)  # 单位MB
+                    decode_vmdk_path
+                )  # 单位MB
                 disk_info["ovf_id"] = ovf_id  # file1
                 disk_info["ovf_disk_id"] = ovf_disk_id  # vmdisk1
                 disk_info["name"] = disk_label  # Hard disk 1
@@ -324,8 +320,7 @@ class BaseMigration(object):
                     src_size = int(round(float(ovf_capacity))) / 1024 / 1024
                 elif ovf_unit == "byte":
                     # B转换为GB
-                    src_size = int(
-                        round(float(ovf_capacity))) / 1024 / 1024 / 1024
+                    src_size = int(round(float(ovf_capacity))) / 1024 / 1024 / 1024
                 else:
                     # 默认为GB
                     src_size = int(round(float(ovf_capacity)))
@@ -335,14 +330,16 @@ class BaseMigration(object):
                 if src_size_suffix == 0:
                     disk_info["size"] = src_size  # 100GB
                 else:
-                    disk_info["size"] = int(src_size) + (
-                                10 - src_size_suffix)  # 100GB
+                    disk_info["size"] = int(src_size) + (10 - src_size_suffix)  # 100GB
 
                 dst_vm_disk.append(disk_info)
         except Exception as e:
-            self.vm_session.update_detail_migrate_status(dict(
-                err_code=ErrorCode.DEAL_IMAGE_ERROR_DISK_CONFIG_RELATE_IMAGE_PATH.value,
-                err_msg=ErrorMsg.DEAL_IMAGE_ERROR_DISK_CONFIG_RELATE_IMAGE_PATH.value.zh))
+            self.vm_session.update_detail_migrate_status(
+                dict(
+                    err_code=ErrorCode.DEAL_IMAGE_ERROR_DISK_CONFIG_RELATE_IMAGE_PATH.value,
+                    err_msg=ErrorMsg.DEAL_IMAGE_ERROR_DISK_CONFIG_RELATE_IMAGE_PATH.value.zh,
+                )
+            )
 
             log_msg = f"generate dst vm disk info failed, session id: {self.vm_session.session_id}, dst vm disk: {dst_vm_disk}, error reason: {str(e)}"
             logger.exception(log_msg)
@@ -350,26 +347,36 @@ class BaseMigration(object):
 
         # 更新配置到数据库
         self.vm_session.update_to_mem_and_pg(dict(dst_vm_disk=dst_vm_disk))
-        logger.info(f"generate dst vm disk info end, session id: {self.vm_session.session_id}, dst vm disk: {dst_vm_disk}")
+        logger.info(
+            f"generate dst vm disk info end, session id: {self.vm_session.session_id}, dst vm disk: {dst_vm_disk}"
+        )
 
     def _convert_image(self):
         """转换镜像"""
-        logger.info(f"convert image start, session id: {self.vm_session.session_id}, dst vm disk: {self.vm_session.dst_vm_disk}")
+        logger.info(
+            f"convert image start, session id: {self.vm_session.session_id}, dst vm disk: {self.vm_session.dst_vm_disk}"
+        )
 
         dst_vm_disk = self.vm_session.dst_vm_disk
         for disk_info in dst_vm_disk:
             vmdk_path = disk_info["vmdk_path"]
-            disk_info["qcow2_path"] = qcow2_path = vmdk_path.replace("vmdk",
-                                                                     "qcow2")
+            disk_info["qcow2_path"] = qcow2_path = vmdk_path.replace("vmdk", "qcow2")
 
             # 执行转换镜像命令
             convert_cmd = f"{config.migration.qemu_img_tool_path} {QemuImgAction.CONVERT.value} -p -f {config.migration.deal_image_src_format_vmdk} -O {config.migration.deal_image_dst_format_qcow2} {vmdk_path} {qcow2_path}"
-            logger.info(f"convert image ready, session id: {self.vm_session.session_id}, disk name: {disk_info['name']}, convert cmd: {convert_cmd}")
-            returncode, _, stderr = CMDClient.bash_exec(convert_cmd, config.migration.convert_image_timeout)
+            logger.info(
+                f"convert image ready, session id: {self.vm_session.session_id}, disk name: {disk_info['name']}, convert cmd: {convert_cmd}"
+            )
+            returncode, _, stderr = CMDClient.bash_exec(
+                convert_cmd, config.migration.convert_image_timeout
+            )
             if returncode != 0:
-                self.vm_session.update_detail_migrate_status(dict(
-                    err_code=ErrorCode.CONVERT_IMAGE_ERROR_COMMON.value,
-                    err_msg=ErrorMsg.CONVERT_IMAGE_ERROR_COMMON.value.zh))
+                self.vm_session.update_detail_migrate_status(
+                    dict(
+                        err_code=ErrorCode.CONVERT_IMAGE_ERROR_COMMON.value,
+                        err_msg=ErrorMsg.CONVERT_IMAGE_ERROR_COMMON.value.zh,
+                    )
+                )
                 log_msg = f"convert image failed, session id: {self.vm_session.session_id}, disk name: {disk_info['name']}, convert cmd: {convert_cmd}, error reason: {stderr}"
                 logger.error(log_msg)
                 raise Exception(log_msg)
@@ -381,28 +388,25 @@ class BaseMigration(object):
             # 统计信息
 
             # 识别系统盘并赋值
-            is_os_disk = disk_info.get("is_os_disk",
-                                       None) or self.identify_src_vm_os_disk(
-                qcow2_path)
+            is_os_disk = disk_info.get(
+                "is_os_disk", None
+            ) or self.identify_src_vm_os_disk(qcow2_path)
             disk_info["is_os_disk"] = is_os_disk
             if is_os_disk:
-                disk_info["volume_type"] = \
-                self.vm_session.info["dst_vm_os_disk"]["type"]
+                disk_info["volume_type"] = self.vm_session.info["dst_vm_os_disk"]["type"]
             else:
-                if "dst_vm_data_disk" in self.vm_session.info \
-                        and isinstance(
-                    self.vm_session.info["dst_vm_data_disk"], dict) \
-                        and "type" in self.vm_session.info["dst_vm_data_disk"]:
-                    data_disk_type = self.vm_session.info["dst_vm_data_disk"][
-                        "type"]
+                if (
+                    "dst_vm_data_disk" in self.vm_session.info
+                    and isinstance(self.vm_session.info["dst_vm_data_disk"], dict)
+                    and "type" in self.vm_session.info["dst_vm_data_disk"]
+                ):
+                    data_disk_type = self.vm_session.info["dst_vm_data_disk"]["type"]
                     disk_info["volume_type"] = data_disk_type
-
-
 
             # 更新虚拟机的配置
 
         # 若源虚拟机没有安装系统，则直接报错，迁移终止
-    
+
         # 若源虚拟机识别错误识别出来多个系统盘，则直接报错，迁移终止
 
         # 更新虚拟机的配置
@@ -449,7 +453,6 @@ class BaseMigration(object):
 
     def _cover_image_by_move(self, disk_info):
         """通过剪切的方式覆盖镜像"""
-    
 
     def _cover_image_by_dd(self, disk_info):
         """通过dd的方式覆盖镜像"""
@@ -460,9 +463,12 @@ class BaseMigration(object):
             return is_os_disk
 
         # 走到这里，意味着当前的方法均无法判断
-        self.vm_session.update_detail_migrate_status(dict(
-            err_code=ErrorCode.CONVERT_IMAGE_ERROR_IDENTIFY_OS_DISK_FAILED.value,
-            err_msg=ErrorMsg.CONVERT_IMAGE_ERROR_IDENTIFY_OS_DISK_FAILED.value.zh))
+        self.vm_session.update_detail_migrate_status(
+            dict(
+                err_code=ErrorCode.CONVERT_IMAGE_ERROR_IDENTIFY_OS_DISK_FAILED.value,
+                err_msg=ErrorMsg.CONVERT_IMAGE_ERROR_IDENTIFY_OS_DISK_FAILED.value.zh,
+            )
+        )
         log_msg = f"identify os disk failed, image file: {qcow2_path}, error reason: {ErrorMsg.CONVERT_IMAGE_ERROR_IDENTIFY_OS_DISK_FAILED.value.en}"
         logger.error(log_msg)
         raise Exception(log_msg)
@@ -478,7 +484,6 @@ class BaseMigration(object):
                 return False
             pass
 
-
     @staticmethod
     def _identify_windows_os_disk_by_boot(img_info):
         """windows操作系统依据boot文件判断是否为系统盘"""
@@ -487,11 +492,13 @@ class BaseMigration(object):
         tag_file_list = ["bootx64.efi", "boot.ini", "AUTOEXEC.BAT"]
         for indeed_dev_path, partition_mnt_dir in partition_info.items():
             os.makedirs(partition_mnt_dir) if not os.path.isdir(
-                partition_mnt_dir) else None
+                partition_mnt_dir
+            ) else None
 
             # 挂载，读取内容并判断是否为系统盘
-            with mount_nbd_device_context(partition_mnt_dir,
-                                          indeed_dev_path) as is_success:
+            with mount_nbd_device_context(
+                partition_mnt_dir, indeed_dev_path
+            ) as is_success:
                 if not is_success:
                     continue
 
@@ -516,18 +523,22 @@ class BaseMigration(object):
         returncode, stdout, stderr = CMDClient.normal_exec(cmd)
         if returncode == 0:
             if stdout:
-                logger.info(f"get suitable boot info, session id: {self.vm_session.session_id}, boot info: {stdout}")
+                logger.info(
+                    f"get suitable boot info, session id: {self.vm_session.session_id}, boot info: {stdout}"
+                )
                 if "*" in stdout.split("\n"):
                     return True
 
         partition_info = img_info["partition_info"]
         for indeed_dev_path, partition_mnt_dir in partition_info.items():
             os.makedirs(partition_mnt_dir) if not os.path.isdir(
-                partition_mnt_dir) else None
+                partition_mnt_dir
+            ) else None
 
             # 挂载，读取内容并判断是否为系统盘
-            with mount_nbd_device_context(partition_mnt_dir,
-                                          indeed_dev_path) as is_success:
+            with mount_nbd_device_context(
+                partition_mnt_dir, indeed_dev_path
+            ) as is_success:
                 if not is_success:
                     continue
 
@@ -556,6 +567,7 @@ class BaseMigration(object):
 
 class ExportImageMigration(BaseMigration):
     """导出镜像模式对应的迁移器"""
+
     migrate_pattern = MigratePattern.EXPORT_IMAGE.value
 
     def __init__(self, vm_session):
@@ -564,7 +576,9 @@ class ExportImageMigration(BaseMigration):
 
     def export_image(self):
         """导出镜像"""
-        logger.info(f"export image start, session id: {self.vm_session.session_id}, src vm name: {self.vm_session.src_vm_name}")
+        logger.info(
+            f"export image start, session id: {self.vm_session.session_id}, src vm name: {self.vm_session.src_vm_name}"
+        )
         # 更新详细的迁移状态信息
         start_status = RunningDetailMigrateStatus.START_EXPORT_IMAGE_DETAIL_STATUS.value
         start_status["step"]["start_time"] = TimeTool.get_now_datetime_str()
@@ -583,7 +597,9 @@ class ExportImageMigration(BaseMigration):
 
         src_platform = self.vm_session.task.src_platform
         export_image_cmd = f"{config.migration.ovf_tool_path} {config.migration.export_image_common_params} {advanced_params} '{config.migration.export_image_cmd_prefix}{src_platform.user}:{AESTool.aes_decode(src_platform.password)}@{src_platform.ip}:{src_platform.port}/{self.vm_session.task.src_datacenter_name}/vm/{self.vm_session.src_vm_folder}/{self.vm_session.src_vm_name}' '{self.vm_session.export_dir}/{self.vm_session.dst_vm_name}.{config.migration.export_image_dst_format.value}' "
-        logger.info(f"export image ready, session id: {self.vm_session.session_id}, src vm name: {self.vm_session.src_vm_name}, export image cmd: {export_image_cmd}")
+        logger.info(
+            f"export image ready, session id: {self.vm_session.session_id}, src vm name: {self.vm_session.src_vm_name}, export image cmd: {export_image_cmd}"
+        )
         start_time = datetime.datetime.now()
 
         # 执行导出镜像命令
@@ -591,15 +607,21 @@ class ExportImageMigration(BaseMigration):
         while True:
             execute_times += 1
             logger.info(
-                f"export image, execute times: {execute_times} times, max retry times: {config.migration.export_image_max_retry_times} times, session id: {self.vm_session.session_id}")
-            returncode, stdout, stderr = CMDClient.normal_exec(export_image_cmd, config.migration.export_image_timeout)
+                f"export image, execute times: {execute_times} times, max retry times: {config.migration.export_image_max_retry_times} times, session id: {self.vm_session.session_id}"
+            )
+            returncode, stdout, stderr = CMDClient.normal_exec(
+                export_image_cmd, config.migration.export_image_timeout
+            )
             if returncode == 0:
                 break
 
             if execute_times >= config.migration.export_image_max_retry_times:
-                self.vm_session.update_detail_migrate_status(dict(
-                    err_code=ErrorCode.EXPORT_IMAGE_ERROR_COMMON.value,
-                    err_msg=ErrorMsg.EXPORT_IMAGE_ERROR_COMMON.value.zh))
+                self.vm_session.update_detail_migrate_status(
+                    dict(
+                        err_code=ErrorCode.EXPORT_IMAGE_ERROR_COMMON.value,
+                        err_msg=ErrorMsg.EXPORT_IMAGE_ERROR_COMMON.value.zh,
+                    )
+                )
 
                 log_msg = f"export image failed, retry times has out of limit, session id: {self.vm_session.session_id}, export image cmd: {export_image_cmd}, error reason: {stderr}"
                 logger.error(log_msg)
@@ -608,12 +630,19 @@ class ExportImageMigration(BaseMigration):
 
         # 检查OVA文件是否成功下载
         ova_name = ".".join(
-            [self.vm_session.dst_vm_name, config.migration.export_image_dst_format.value])
+            [
+                self.vm_session.dst_vm_name,
+                config.migration.export_image_dst_format.value,
+            ]
+        )
         self.ova_path = os.path.join(self.vm_session.export_dir, ova_name)
         if not os.path.isfile(self.ova_path):
-            self.vm_session.update_detail_migrate_status(dict(
-                err_code=ErrorCode.EXPORT_IMAGE_ERROR_OVA_NOT_EXISTS.value,
-                err_msg=ErrorMsg.EXPORT_IMAGE_ERROR_OVA_NOT_EXISTS.value.zh))
+            self.vm_session.update_detail_migrate_status(
+                dict(
+                    err_code=ErrorCode.EXPORT_IMAGE_ERROR_OVA_NOT_EXISTS.value,
+                    err_msg=ErrorMsg.EXPORT_IMAGE_ERROR_OVA_NOT_EXISTS.value.zh,
+                )
+            )
 
             log_msg = f"export image failed, can not find ova file, session id: {self.vm_session.session_id}, ova path: {self.ova_path}"
             logger.error(log_msg)
@@ -630,14 +659,17 @@ class ExportImageMigration(BaseMigration):
         time_strftime = str(datetime.timedelta(seconds=total_seconds))
         ova_size = FileTool.get_file_size(self.ova_path)
         export_speed = ova_size / total_seconds  # 单位：MB/s
-        logger.info(f"export image end, session id: {self.vm_session.session_id}, cost time: {time_strftime}, execute times: {execute_times} times, "
-                    f"ova size: {ova_size}MB, export speed: {export_speed}MB/s, ova path: {self.ova_path}")
+        logger.info(
+            f"export image end, session id: {self.vm_session.session_id}, cost time: {time_strftime}, execute times: {execute_times} times, "
+            f"ova size: {ova_size}MB, export speed: {export_speed}MB/s, ova path: {self.ova_path}"
+        )
 
     def _uncompress_image(self):
         """解压镜像"""
-        logger.info(f"uncompress image start, session id: {self.vm_session.session_id}, ova path: {self.ova_path}")
-        vmdk_dir = os.path.join(self.vm_session.export_dir,
-                                self.vm_session.dst_vm_name)
+        logger.info(
+            f"uncompress image start, session id: {self.vm_session.session_id}, ova path: {self.ova_path}"
+        )
+        vmdk_dir = os.path.join(self.vm_session.export_dir, self.vm_session.dst_vm_name)
         shutil.rmtree(vmdk_dir) if os.path.isdir(vmdk_dir) else None
         os.mkdir(vmdk_dir)
         start_time = datetime.datetime.now()
@@ -646,23 +678,25 @@ class ExportImageMigration(BaseMigration):
             for single_file in tar.getnames():
                 if single_file.endswith("ovf"):
                     tar.extract(single_file, self.vm_session.export_dir)
-                    self.ovf_path = os.path.join(self.vm_session.export_dir,
-                                                 single_file)
+                    self.ovf_path = os.path.join(
+                        self.vm_session.export_dir, single_file
+                    )
                 elif single_file.endswith("vmdk"):
                     tar.extract(single_file, vmdk_dir)
-                    self.vmdk_path_list.append(
-                        os.path.join(vmdk_dir, single_file))
+                    self.vmdk_path_list.append(os.path.join(vmdk_dir, single_file))
                 elif single_file.endswith("mf"):
                     tar.extract(single_file, self.vm_session.export_dir)
-                    self.mf_path = os.path.join(self.vm_session.export_dir,
-                                                single_file)
+                    self.mf_path = os.path.join(self.vm_session.export_dir, single_file)
                 else:
                     continue
             tar.close()
         except Exception as e:
-            self.vm_session.update_detail_migrate_status(dict(
-                err_code=ErrorCode.DEAL_IMAGE_ERROR_UNCOMPRESS_IMAGE_FAILED.value,
-                err_msg=ErrorMsg.DEAL_IMAGE_ERROR_UNCOMPRESS_IMAGE_FAILED.value.zh))
+            self.vm_session.update_detail_migrate_status(
+                dict(
+                    err_code=ErrorCode.DEAL_IMAGE_ERROR_UNCOMPRESS_IMAGE_FAILED.value,
+                    err_msg=ErrorMsg.DEAL_IMAGE_ERROR_UNCOMPRESS_IMAGE_FAILED.value.zh,
+                )
+            )
 
             log_msg = f"uncompress image failed, user id: {self.vm_session.user_id}, session id: {self.vm_session.session_id}, ova path: {self.ova_path}, error reason: {str(e)}"
             logger.error(log_msg)
@@ -675,8 +709,10 @@ class ExportImageMigration(BaseMigration):
         ova_size = FileTool.get_file_size(self.ova_path)
         uncompress_speed = ova_size / total_seconds  # 单位: MB/s
 
-        logger.info(f"uncompress image end, session id: {self.vm_session.session_id}, cost time: {time_strftime}, ova_size: {ova_size}MB, uncompress speed: {uncompress_speed}MB/s, ova path: {self.ova_path}, "
-                    f"vmdk path list: {self.vmdk_path_list}, ovf path: {self.ovf_path}")
+        logger.info(
+            f"uncompress image end, session id: {self.vm_session.session_id}, cost time: {time_strftime}, ova_size: {ova_size}MB, uncompress speed: {uncompress_speed}MB/s, ova path: {self.ova_path}, "
+            f"vmdk path list: {self.vmdk_path_list}, ovf path: {self.ovf_path}"
+        )
 
     def check_image(self):
         """检查镜像"""
@@ -688,11 +724,16 @@ class ExportImageMigration(BaseMigration):
         # 2.检查文件的SHA256值
         """
 
-        logger.info(f"check image start, session id: {self.vm_session.session_id}, ova path: {self.ova_path}, mf path: {self.mf_path}")
+        logger.info(
+            f"check image start, session id: {self.vm_session.session_id}, ova path: {self.ova_path}, mf path: {self.mf_path}"
+        )
         if not self.mf_path:
-            self.vm_session.update_detail_migrate_status(dict(
-                err_code=ErrorCode.DEAL_IMAGE_ERROR_MF_NOT_EXISTS.value,
-                err_msg=ErrorMsg.DEAL_IMAGE_ERROR_MF_NOT_EXISTS.value.zh))
+            self.vm_session.update_detail_migrate_status(
+                dict(
+                    err_code=ErrorCode.DEAL_IMAGE_ERROR_MF_NOT_EXISTS.value,
+                    err_msg=ErrorMsg.DEAL_IMAGE_ERROR_MF_NOT_EXISTS.value.zh,
+                )
+            )
 
             log_msg = f"mf file is not exists, session id: {self.vm_session.session_id}"
             logger.error(log_msg)
@@ -714,9 +755,12 @@ class ExportImageMigration(BaseMigration):
         ovf_content = FileTool.read_file(self.ovf_path)
         ovf_sha256 = FileTool.sha256_tool(ovf_content)
         if mf_data.get(ovf_key) != ovf_sha256:
-            self.vm_session.update_detail_migrate_status(dict(
-                err_code=ErrorCode.DEAL_IMAGE_ERROR_OVF_NOT_MATCH.value,
-                err_msg=ErrorMsg.DEAL_IMAGE_ERROR_OVF_NOT_MATCH.value.zh))
+            self.vm_session.update_detail_migrate_status(
+                dict(
+                    err_code=ErrorCode.DEAL_IMAGE_ERROR_OVF_NOT_MATCH.value,
+                    err_msg=ErrorMsg.DEAL_IMAGE_ERROR_OVF_NOT_MATCH.value.zh,
+                )
+            )
 
             log_msg = f"ovf file {ovf_name} md5 is not match, mf md5: {mf_data.get(ovf_key)}, ovf md5: {ovf_sha256}"
             logger.error(log_msg)
@@ -729,19 +773,25 @@ class ExportImageMigration(BaseMigration):
             vmdk_content = FileTool.read_file(vmdk_path)
             vmdk_sha256 = FileTool.sha256_tool(vmdk_content)
             if mf_data.get(vmdk_key) != vmdk_sha256:
-                self.vm_session.update_detail_migrate_status(dict(
-                    err_code=ErrorCode.DEAL_IMAGE_ERROR_VMDK_NOT_MATCH.value,
-                    err_msg=ErrorMsg.DEAL_IMAGE_ERROR_VMDK_NOT_MATCH.value.zh))
+                self.vm_session.update_detail_migrate_status(
+                    dict(
+                        err_code=ErrorCode.DEAL_IMAGE_ERROR_VMDK_NOT_MATCH.value,
+                        err_msg=ErrorMsg.DEAL_IMAGE_ERROR_VMDK_NOT_MATCH.value.zh,
+                    )
+                )
 
                 log_msg = f"vmdk file {ovf_name} md5 is not match, mf md5: {mf_data.get(ovf_key)}, vmdk md5: {vmdk_sha256}"
                 logger.error(log_msg)
                 raise Exception(log_msg)
 
-        logger.info(f"check image end, session id: {self.vm_session.session_id}, ova path: {self.ova_path}, mf path: {self.mf_path}")
+        logger.info(
+            f"check image end, session id: {self.vm_session.session_id}, ova path: {self.ova_path}, mf path: {self.mf_path}"
+        )
 
 
 class UploadImageMigration(BaseMigration):
     """上传镜像模式对应的迁移器"""
+
     migrate_pattern = MigratePattern.UPLOAD_IMAGE.value
 
     def __init__(self, vm_session):

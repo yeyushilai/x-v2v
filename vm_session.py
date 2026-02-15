@@ -40,18 +40,14 @@ class VMSession(VMSessionBase):
         super(VMSession, self).__init__(session_id)
         self._info = dict()
 
-    # @property
-    # def info(self):
-    #     if not self._info:
-    #         self._info = CTX.v2v_pg.query_vm(self.session_id)
-    #     return self._info
+    @property
+    def info(self):
+        return self._info
 
-    # @info.setter
-    # def info(self, value):
-    #     if not self._info:
-    #         self._info = value
-    #     else:
-    #         self._info.update(value)
+    @info.setter
+    def info(self, value):
+        if not self._info:
+            self._info = value
 
     def migration(self):
         """迁移器"""
@@ -231,7 +227,7 @@ class VMSession(VMSessionBase):
         self.update_to_mem(data)
 
         # 更新虚拟机任务信息到数据库
-        self.update_to_pg(data)
+        # self.update_to_pg(data)
 
     def update_detail_migrate_status(self, detail_status):
         """更新详细的迁移状态到内存和数据库"""
@@ -240,4 +236,4 @@ class VMSession(VMSessionBase):
             status = detail_status["status"]
         if status in MigrateStatus.list_end_migrate_status():
             detail_status["end_time"] = TimeTool.get_now_datetime()
-        self.update_to_mem_and_pg(detail_status)
+        # self.update_to_mem_and_pg(detail_status)

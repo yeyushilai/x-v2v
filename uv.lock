@@ -385,7 +385,7 @@ wheels = [
 ]
 
 [[package]]
-name = "new-v2v"
+name = "x-v2v"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
