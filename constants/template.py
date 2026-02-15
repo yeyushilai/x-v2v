@@ -73,9 +73,9 @@ CREATE_INSTANCE_INSERT_IMAGE_TEMPLATE = dict(
     app_billing_id='''''',
     root_partition_number=0,
 
-    # 可选None、pitrix,
+    # 可选None、iaas,
     # 用于云平台获取虚机监控信息
-    agent_type='''pitrix''',
+    agent_type='''iaas''',
 
     # 可选''''''或者lvm
     root_partition_fs='''''',

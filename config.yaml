@@ -1,0 +1,107 @@
+# -*- coding: utf-8 -*-
+project:
+  name: x-v2v
+  version: 1.0.0
+
+self:
+  data_dir: /x-v2v/iaas/data
+  deploy_dir: /x-v2v/iaas/deploy
+
+setting:
+  concurrency_migrate: 3
+  max_migrating_num: 10
+  clean_after_failed: true
+  vm_max_migrate_timeout: 86400
+
+resource:
+  lib:
+    ld_nfs_so: /x-v2v/iaas/lib/ld_nfs.so
+
+migration:
+  indeed_start_migrate_timeout: 300
+  indeed_end_migrate_timeout: 86400
+  
+  export_image_log_path: "/x-v2v/log/ovftool.log"
+  export_image_log_level: "warning"
+  export_image_log_to_console: ""
+  export_image_dst_base_dir: "v2v_export"
+  export_image_dst_format_ova: "ova"
+  export_image_timeout: 86400
+  export_image_max_retry_times: 5
+  export_image_cmd_vi_prefix: "vi://"
+  export_image_cmd_nosslverify: "--noSSLVerify"
+  export_image_cmd_overwrite: "--overwrite"
+  export_image_cmd_machineoutput: "--machineOutput"
+  export_image_cmd_quiet: "--quiet"
+  export_image_cmd_noimagefiles: "--noImageFiles"
+  export_image_cmd_poweroffsource: "--powerOffSource"
+  export_image_cmd_nonvramfile: "--noNvramFile"
+  export_image_cmd_acceptalleulas: "--acceptAllEulas"
+  
+  upload_image_ld_nfs_so_path: "/x-v2v/iaas/lib/ld_nfs.so"
+  upload_image_dst_base_dir: "v2v_upload"
+  upload_image_timeout: 86400
+  
+  deal_image_src_format_vmdk: "vmdk"
+  deal_image_dst_format_qcow2: "qcow2"
+  deal_image_convert_image_timeout: 86400
+  deal_image_mount_base_dir: "v2v_mount"
+  deal_image_file_lock_base_dir: "v2v_lock"
+  
+  create_instance_image_file_path: "template.lz4"
+  create_instance_run_instance_timeout: 1800
+  create_instance_start_instance_timeout: 1200
+  create_instance_restart_instance_timeout: 1200
+  create_instance_stop_instance_timeout: 1200
+  create_instance_create_volumes_timeout: 1200
+  create_instance_attach_volumes_timeout: 600
+  
+  cover_image_timeout: 86400
+
+hyper:
+  image_base_dir: /data/images
+  vmware_ovf_tool_path: /usr/bin/ovftool
+  qemu_img_tool_path: /usr/bin/qemu-img
+  container_mode: local
+
+vmware_vsphere:
+  timeout_connect_to_vmware_vsphere: 200
+
+seed:
+  nodes:
+    - 192.168.1.100
+  image_repository_base_dir: /data/repository
+  id_rsa_path: /root/.ssh/id_rsa
+  default_user: root
+
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password: ""
+  db: 0
+  max_connections: 10
+  conf_name_v2v: "x-v2v"
+  socket_timeout: 5
+  socket_connect_timeout: 5
+  max_connection_number: 1000
+  key_prefix: "v2v_"
+  key_suffix_auto_node: "auto"
+
+zk:
+  hosts:
+    - 127.0.0.1:2181
+  timeout: 30000
+  x_v2v_zk_base_dir: "/x-v2v"
+  dlock_key: "x-v2v"
+  dlock_timeout: 5
+
+nfs:
+  mount_point: /mnt/nfs
+  server: 192.168.1.200
+  export_path: /export/x-v2v
+
+log:
+  level: INFO
+  log_dir: /var/log/x-v2v
+  max_bytes: 10485760
+  backup_count: 5

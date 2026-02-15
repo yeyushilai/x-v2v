@@ -1,184 +1,171 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import time
-
-# 设置日志
-from logger import logger
-
-from utils.time.timex import get_current_time
-from api.constants import HYPERNODE_STATUS_ACTIVE
-
-from worker import Worker
-from context import WorkerContext
-from dispatcher import dispatch_task, dispatch_vm
+from core.logger import logger
+from vm_session import VMSession
 
 
-from constants.common import (
-    # 当前节点信息
-    LOCAL_NODE_ID,
+class MigrateHandler:
+    """ 迁移Handler类 """
 
-    # 自身
-    MAX_MIGRATING_NUM,
-    DATA_DIR,
+    action = "immediately_migrate"
 
-    # 调试
-    CONCURRENCY_MIGRATE,
+    def __init__(self, params):
+        self.vm_session_info = params
 
-    # 迁移全局
-    INDEED_START_MIGRATE_TIMEOUT,
-    INDEED_END_MIGRATE_TIMEOUT,
+    def start(self):
+        """发起迁移"""
+        session_id = self.vm_session_info["session_id"]
+        user_id = self.vm_session_info["user_id"]
 
-    # 导出镜像
-    EXPORT_IMAGE_DST_BASE_DIR,
-    EXPORT_IMAGE_LOG_PATH,
-
-    # 上传镜像
-    UPLOAD_IMAGE_DST_BASE_DIR,
-
-    # 转换镜像
-    # DEAL_IMAGE_MOUNT_BASE_DIR,
-    # DEAL_IMAGE_FILE_LOCK_BASE_DIR,
-
-    # 迁移相关
-    MigrateStatus,
-    WorkerAction
-)
-from constants.error import ErrorCode, ErrorMsg
-
-# 初始化上下文
-ctx = WorkerContext()
+        logger.info("=====================================")
+        logger.info(
+            f"vm start migrate, session id: {session_id}, "
+            f"action: {self.action}, user id: {user_id}"
+        )
+        vm_session = VMSession(session_id)
+        vm_session.info = self.vm_session_info
+        vm_session.migrate()
 
 
-def check_hyper_node():
-    # 简化检查，只确保能够获取节点信息
-    try:
-        bot_set = ctx.iaas.describe_bots(hyper_ids=[LOCAL_NODE_ID],
-                                         zone=ctx.local_node.zone_id)
-        logger.info("Hyper node checked successfully")
-    except Exception as e:
-        err_msg = "Failed to check hyper node: {reason}".format(reason=str(e))
-        logger.error(err_msg)
-        raise Exception(err_msg)
+if __name__ == "__main__":
+    params = {
+        # ===== 核心标识 =====
+        "session_id": "session-12345678-1234-5678-1234-567812345678",
+        "task_id": "task-12345678-1234-5678-1234-567812345678",
+        "user_id": "usr-abc12345",
+        # ===== 源虚拟机信息 (VMware) =====
+        "src_vm_id": "vm-123456",
+        "src_vm_name": "test-vm-01",
+        "src_vm_cpu_core": 2,
+        "src_vm_memory": 4096,
+        "src_vm_os_type": "windows",
+        "src_vm_os_name": "Windows Server 2019",
+        "src_vm_folder": "/Datacenter/vm",
+        "src_vm_nfs_path": "",
+        "src_vm_create_time": "2024-01-01T00:00:00",
+        # ===== 源虚拟机磁盘配置 (src_vm_disk) =====
+        "src_vm_disk": [
+            {
+                "device_key": 2000,
+                "file_path": "[datastore1] test-vm-01/test-vm-01.vmdk",
+                "capacity": 50,
+                "controller_key": 1000,
+                "unit_number": 0,
+                "disk_mode": "persistent",
+                "thin_provisioned": True,
+                "controller_type": "lsilogic",
+            },
+            {
+                "device_key": 2001,
+                "file_path": "[datastore1] test-vm-01/test-vm-01_1.vmdk",
+                "capacity": 100,
+                "controller_key": 1000,
+                "unit_number": 1,
+                "disk_mode": "persistent",
+                "thin_provisioned": True,
+                "controller_type": "lsilogic",
+            },
+            {
+                "device_key": 2002,
+                "file_path": "[datastore2] test-vm-01/test-vm-01_2.vmdk",
+                "capacity": 200,
+                "controller_key": 1001,
+                "unit_number": 0,
+                "disk_mode": "independent_persistent",
+                "thin_provisioned": False,
+                "controller_type": "paravirtual",
+            },
+        ],
+        # ===== 源虚拟机网络配置 =====
+        "src_vm_net": [
+            {
+                "mac_address": "00:50:56:AA:BB:CC",
+                "network_name": "VM Network",
+                "adapter_type": "e1000",
+                "connected": True,
+                "start_connected": True,
+            },
+            {
+                "mac_address": "00:50:56:DD:EE:FF",
+                "network_name": "VM Network 2",
+                "adapter_type": "vmxnet3",
+                "connected": True,
+                "start_connected": True,
+            },
+        ],
+        # ===== 目标虚拟机配置 =====
+        "dst_vm_name": "migrated-vm-01",
+        "dst_vm_type": "s2.small",
+        "dst_vm_cpu_core": 2,
+        "dst_vm_memory": 4096,
+        "dst_vm_os_type": "windows",
+        "dst_vm_os_name": "Windows Server 2019",
+        # ===== 目标镜像配置 =====
+        "dst_vm_image": {
+            "image_id": "img-12345678-1234-5678-1234-567812345678",
+            "image_name": "image-test-windows-2019",
+            "os_type": "windows",
+            "platform": "windows",
+            "processor_type": "x86_64",
+            "size": 50,
+        },
+        # ===== 目标磁盘配置 (dst_vm_disk) =====
+        "dst_vm_disk": [
+            {
+                "size": 50,
+                "device_name": "/dev/sda",
+                "volume_id": "vol-00000001",
+                "volume_name": "system-disk",
+                "disk_type": 0,
+            },
+            {
+                "size": 100,
+                "device_name": "/dev/sdb",
+                "volume_id": "vol-00000002",
+                "volume_name": "data-disk-1",
+                "disk_type": 2,
+            },
+            {
+                "size": 200,
+                "device_name": "/dev/sdc",
+                "volume_id": "vol-00000003",
+                "volume_name": "data-disk-2",
+                "disk_type": 2,
+            },
+        ],
+        "dst_vm_os_disk": {"type": 0, "size": 50, "volume_name": "system-disk"},
+        "dst_vm_data_disk": {"type": 2, "count": 2},
+        # ===== 目标网络配置 (dst_vm_net) =====
+        "dst_vm_net": [
+            {
+                "vxnet_id": "vxnet-12345678",
+                "vxnet_type": 1,
+                "vxnet_name": "私有网络",
+                "vpc_router_id": "rtr-12345678",
+                "router": "192.168.1.1",
+                "ip": "192.168.1.100",
+            },
+            {
+                "vxnet_id": "vxnet-87654321",
+                "vxnet_type": 0,
+                "vxnet_name": "公有网络",
+                "vpc_router_id": "",
+                "router": "",
+                "ip": "",
+            },
+        ],
+        # ===== 迁移状态 =====
+        "status": "ready",
+        "process": 0,
+        "step": {},
+        "priority": 1,
+        # ===== 目标节点信息 (初始化时会填充) =====
+        "indeed_dst_node_id": "",
+        "indeed_dst_node_ip": "",
+        # ===== 额外信息 (初始化时会添加) =====
+        "extra": {},
+    }
 
-
-def init_directory():
-    """初始化目录"""
-
-    # V2V项目的基准目录
-    # eg: /pitrix/data/v2v
-    if not os.path.exists(DATA_DIR):
-        os.mkdir(DATA_DIR)
-
-    # 导出镜像时，若相关的日志所在的目录未生成，需要生成
-    export_image_log_base_dir = os.path.dirname(EXPORT_IMAGE_LOG_PATH)
-    if not os.path.isdir(export_image_log_base_dir):
-        os.mkdir(export_image_log_base_dir)
-
-    # 导出镜像时，临时保存镜像的基准目录
-    # eg: /pitrix/data/v2v/v2v_export
-    if not os.path.isdir(EXPORT_IMAGE_DST_BASE_DIR):
-        os.mkdir(EXPORT_IMAGE_DST_BASE_DIR)
-
-    # 上传镜像时，临时保存镜像的基准目录
-    # eg: /pitrix/data/v2v/v2v_upload
-    if not os.path.isdir(UPLOAD_IMAGE_DST_BASE_DIR):
-        os.mkdir(UPLOAD_IMAGE_DST_BASE_DIR)
-
-
-def register_hyper_node():
-    """简化版：跳过ZooKeeper注册"""
-    logger.info("Skipping ZooKeeper registration in simplified version")
-
-
-def reset_remained_vms():
-    """简化版：跳过残余虚拟机重置"""
-    logger.info("Skipping remained VMs reset in simplified version")
-
-
-def supervise_worker(v2v_worker):
-    """简化版：监管worker状态"""
-    alive_threads = v2v_worker.alive_threads
-    if alive_threads:
-        logger.info("Supervising %d alive worker threads" % len(alive_threads))
-    else:
-        logger.info("No alive worker threads to supervise")
-
-
-def check_local_node_queue():
-    """简化版：判断当前节点是否有空闲的队列"""
-    # 直接返回True，假设节点总是有空闲队列
-    logger.info("Checking local node queue: assuming available")
-    return True
-
-
-def loop():
-    """循环调度任务，调度待迁移主机、执行迁移"""
-    action = WorkerAction.IMMEDIATELY_MIGRATE.value
-    v2v_worker = Worker(CONCURRENCY_MIGRATE)
-
-    while True:
-        try:
-            # 监管当前worker的状态
-            supervise_worker(v2v_worker)
-
-            # 判断当前节点是否有空闲的队列
-            check_local_node_queue()
-
-            # 调度一个迁移任务
-            task_info = dispatch_task()
-            if not task_info:
-                logger.info("dispatch a suitable task failed, sleep 30s")
-                time.sleep(30)
-                continue
-
-            # 从迁移任务中调度出一个待迁移的虚拟机
-            vm_session = dispatch_vm(task_info)
-            if not vm_session:
-                logger.info("dispatch a suitable vm failed, task id: {task_id}"
-                            ", sleep 30s"
-                            "".format(task_id=task_info["task_id"]))
-                time.sleep(30)
-                continue
-
-            # 执行迁移动作
-            v2v_worker.start(action, vm_session)
-            logger.info("dispatch a suitable vm and send migrate request "
-                        "successfully, session id: {session_id}, "
-                        "task id: {task_id}"
-                        "".format(session_id=vm_session["session_id"],
-                                  task_id=task_info["task_id"]))
-
-        except Exception as e:
-            log_msg = "dispatch a suitable vm and send migrate request failed," \
-                      " sleep 30s, error reason: {reason}" \
-                      "".format(reason=str(e))
-            logger.exception(log_msg)
-            time.sleep(30)
-
-        finally:
-            logger.info("sleep 5s")
-            time.sleep(5)
-
-
-def main():
-
-    # 初始化目录
-    init_directory()
-
-    # 自检hyper节点
-    check_hyper_node()
-
-    # 注册hyper节点
-    register_hyper_node()
-
-    # 重置残留的关联虚拟机
-    reset_remained_vms()
-
-    # 循环调度任务，调度待迁移主机、执行迁移
-    loop()
-
-
-if __name__ == '__main__':
-    main()
+    handler = MigrateHandler(params)
+    handler.start()

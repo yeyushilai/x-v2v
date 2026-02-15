@@ -1,17 +1,24 @@
 [project]
-name = "v2v"
-version = "0.1.0"
-description = "VMware to Cloud migration tool"
-readme = "README.md"
-requires-python = "==3.11"
+name = "new_v2v"
+version = "1.0.0"
+description = "Virtual machine migration tool"
+requires-python = ">=3.9"
+authors = [
+    { name = "V2V Team" }
+]
 dependencies = [
+    "loguru>=0.7.0",
     "pyyaml>=6.0",
-    "pyvmomi>=8.0.0",
-    "pycryptodome>=3.15.0",
+    "xmltodict>=0.13.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
     "pytest>=7.0.0",
-    "flake8>=5.0.0",
 ]
+
+
+
