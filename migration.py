@@ -596,7 +596,7 @@ class ExportImageMigration(BaseMigration):
         advanced_params = " ".join([disk_mode_param])
 
         src_platform = self.vm_session.task.src_platform
-        export_image_cmd = f"{config.migration.ovf_tool_path} {config.migration.export_image_common_params} {advanced_params} '{config.migration.export_image_cmd_prefix}{src_platform.user}:{AESTool.aes_decode(src_platform.password)}@{src_platform.ip}:{src_platform.port}/{self.vm_session.task.src_datacenter_name}/vm/{self.vm_session.src_vm_folder}/{self.vm_session.src_vm_name}' '{self.vm_session.export_dir}/{self.vm_session.dst_vm_name}.{config.migration.export_image_dst_format.value}' "
+        export_image_cmd = f"{config.migration.ovf_tool_path} {config.migration.export_image_common_params} {advanced_params} '{config.migration.export_image_cmd_prefix}{src_platform.user}:{src_platform.password}@{src_platform.ip}:{src_platform.port}/{self.vm_session.task.src_datacenter_name}/vm/{self.vm_session.src_vm_folder}/{self.vm_session.src_vm_name}' '{self.vm_session.export_dir}/{self.vm_session.dst_vm_name}.{config.migration.export_image_dst_format.value}' "
         logger.info(
             f"export image ready, session id: {self.vm_session.session_id}, src vm name: {self.vm_session.src_vm_name}, export image cmd: {export_image_cmd}"
         )

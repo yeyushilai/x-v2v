@@ -2,10 +2,6 @@
 
 """功能：定义虚拟机的类"""
 
-import os
-import shutil
-
-from contextlib import contextmanager
 from core.logger import logger
 
 from tools.time_tool import TimeTool
